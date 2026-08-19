@@ -80,6 +80,6 @@
     "recall_at_optimal": 0.7994652406417112,
     "precision_at_optimal": 0.505922165820643
   },
-  "training_data_path": "/home/halima/Documents/ChurnPrediction/data/Customer-Churn.csv",
+  "training_data_path": "data/Customer-Churn.csv",
   "model_path": "/home/halima/Documents/ChurnPrediction/models/churn_pipeline.joblib"
 }
