@@ -443,7 +443,7 @@ def init_state():
         "inject_query": None,
         "lookup_id": "7590-VHVEG",
         "page": "Overview",
-        "theme": "Dark",
+        "theme": "Light",
     }
     for k, v in defaults.items():
         if k not in st.session_state:
