@@ -36,9 +36,15 @@ def load_pipeline(model_path: Path = None):
     if _pipeline_cache is None:
         p = model_path or MODEL_PATH
         if not Path(p).exists():
-            raise FileNotFoundError(
-                f"Trained model not found at {p}. Run: python run.py train"
-            )
+            logger.info(f"Model file not found at {p}. Auto-training model pipeline...")
+            try:
+                from app.model.trainer import train_model
+                train_model()
+            except Exception as e:
+                logger.error(f"Auto-training model failed: {e}")
+                raise FileNotFoundError(
+                    f"Trained model not found at {p} and auto-training failed: {e}"
+                )
         _pipeline_cache = joblib.load(p)
         logger.info(f"Model loaded from {p}")
     return _pipeline_cache
@@ -49,9 +55,12 @@ def load_metadata(metadata_path: Path = None) -> Dict:
     if _metadata_cache is None:
         p = metadata_path or METADATA_PATH
         if not Path(p).exists():
-            return {}
-        with open(p) as f:
-            _metadata_cache = json.load(f)
+            load_pipeline()  # Auto-train pipeline and generate metadata
+        if Path(p).exists():
+            with open(p) as f:
+                _metadata_cache = json.load(f)
+        else:
+            _metadata_cache = {}
     return _metadata_cache
 
 

@@ -1,0 +1,85 @@
+{
+  "model_name": "LogisticRegression",
+  "n_train": 5634,
+  "n_test": 1409,
+  "feature_names": [
+    "tenure",
+    "MonthlyCharges",
+    "TotalCharges",
+    "gender",
+    "SeniorCitizen",
+    "Partner",
+    "Dependents",
+    "PhoneService",
+    "MultipleLines",
+    "InternetService",
+    "OnlineSecurity",
+    "OnlineBackup",
+    "DeviceProtection",
+    "TechSupport",
+    "StreamingTV",
+    "StreamingMovies",
+    "Contract",
+    "PaperlessBilling",
+    "PaymentMethod"
+  ],
+  "target_column": "Churn",
+  "optimal_threshold": 0.4992596942684454,
+  "train_class_distribution": {
+    "0": 4139,
+    "1": 1495
+  },
+  "test_class_distribution": {
+    "0": 1035,
+    "1": 374
+  },
+  "cv_results": {
+    "LogisticRegression": {
+      "roc_auc_mean": 0.8444027041167959,
+      "roc_auc_std": 0.01163955153214986,
+      "pr_auc_mean": 0.6592253323624353,
+      "f1_mean": 0.6270807537035321,
+      "recall_mean": 0.8033444816053512,
+      "precision_mean": 0.5145029493853861
+    },
+    "RandomForest": {
+      "roc_auc_mean": 0.8276957154926127,
+      "roc_auc_std": 0.00987628181371441,
+      "pr_auc_mean": 0.627461357597175,
+      "f1_mean": 0.5442417790356613,
+      "recall_mean": 0.47023411371237456,
+      "precision_mean": 0.6467608796054469
+    },
+    "HistGradientBoosting": {
+      "roc_auc_mean": 0.8358356581611541,
+      "roc_auc_std": 0.008452067363655684,
+      "pr_auc_mean": 0.6438668965442522,
+      "f1_mean": 0.6190114939291641,
+      "recall_mean": 0.7324414715719063,
+      "precision_mean": 0.5361347879028282
+    }
+  },
+  "test_metrics": {
+    "roc_auc": 0.839747862254256,
+    "pr_auc": 0.6305162350015819,
+    "f1_at_0.5": 0.616822429906542,
+    "recall_at_0.5": 0.7941176470588235,
+    "precision_at_0.5": 0.5042444821731749,
+    "confusion_matrix": [
+      [
+        743,
+        292
+      ],
+      [
+        77,
+        297
+      ]
+    ],
+    "optimal_threshold": 0.4992596942684454,
+    "f1_at_optimal": 0.6196891191709845,
+    "recall_at_optimal": 0.7994652406417112,
+    "precision_at_optimal": 0.505922165820643
+  },
+  "training_data_path": "/home/halima/Documents/ChurnPrediction/data/Customer-Churn.csv",
+  "model_path": "/home/halima/Documents/ChurnPrediction/models/churn_pipeline.joblib"
+}
