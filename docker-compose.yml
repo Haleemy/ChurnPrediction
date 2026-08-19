@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  churn-analyst:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - MODEL_NAME=${MODEL_NAME:-llama-3.3-70b-versatile}
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./models:/app/models   # Persist trained model
+      - ./logs:/app/logs       # Persist logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional: Train model separately before running the app
+  trainer:
+    build: .
+    command: python -c "import sys; sys.path.insert(0, '.'); from app.model.train import train_and_save; import logging; logging.basicConfig(level=logging.INFO); train_and_save()"
+    volumes:
+      - ./models:/app/models
+      - ./data:/app/data
+    profiles: ["train"]
