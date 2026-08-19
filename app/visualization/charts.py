@@ -277,6 +277,38 @@ def chart_risk_distribution(risk_df: pd.DataFrame, title: str = None, theme: str
     return _apply_theme(fig, title or "Predicted Churn Risk Distribution", theme=theme)
 
 
+def chart_risk_gauge(score: float, customer_id: str = "", theme: str = "Dark") -> Dict:
+    """Gauge chart showing single customer churn risk score."""
+    bar_color = "#FF6B6B" if score >= 0.7 else ("#FFB84D" if score >= 0.4 else "#2DD4BF")
+    if theme == "Light":
+        bar_color = "#dc2626" if score >= 0.7 else ("#d97706" if score >= 0.4 else "#059669")
+
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=score * 100,
+        number={"suffix": "%", "font": {"size": 36, "color": "#f5ede4" if theme == "Dark" else "#0f172a"}},
+        title={"text": f"Churn Risk — {customer_id}" if customer_id else "Churn Risk", "font": {"size": 16, "color": "#f5ede4" if theme == "Dark" else "#0f172a"}},
+        gauge={
+            "axis": {"range": [0, 100], "tickwidth": 1, "tickcolor": "#4a332c" if theme == "Dark" else "#cbd5e1"},
+            "bar": {"color": bar_color},
+            "bgcolor": "rgba(0,0,0,0)",
+            "borderwidth": 1,
+            "bordercolor": "rgba(255,255,255,0.1)" if theme == "Dark" else "rgba(0,0,0,0.1)",
+            "steps": [
+                {"range": [0, 40], "color": "rgba(45, 212, 191, 0.15)" if theme == "Dark" else "rgba(5, 150, 105, 0.15)"},
+                {"range": [40, 70], "color": "rgba(255, 184, 77, 0.15)" if theme == "Dark" else "rgba(217, 119, 6, 0.15)"},
+                {"range": [70, 100], "color": "rgba(255, 107, 107, 0.15)" if theme == "Dark" else "rgba(220, 38, 38, 0.15)"},
+            ],
+            "threshold": {
+                "line": {"color": "#ef4444", "width": 4},
+                "thickness": 0.75,
+                "value": 50
+            }
+        }
+    ))
+    return _apply_theme(fig, f"Risk Gauge — {customer_id}" if customer_id else "Risk Gauge", theme=theme)
+
+
 def chart_monthly_charges_by_churn(df: pd.DataFrame, title: str = None, theme: str = "Dark") -> Dict:
     """Box plot of monthly charges split by churn status."""
     yes_color = "#dc2626" if theme == "Light" else "#FF6B6B"
