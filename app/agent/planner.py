@@ -92,13 +92,14 @@ def create_fallback_plan(question: str) -> Dict:
     Uses keyword matching to determine intent.
     """
     q = question.lower()
+    q_clean = q.replace("-", " ")
 
     # Customer ID pattern
     customer_id_match = re.search(r'\b([A-Z0-9]{4}-[A-Z0-9]{5})\b', question.upper())
 
     if customer_id_match:
         cid = customer_id_match.group(1)
-        if any(word in q for word in ["hypothetical", "what if", "changes", "switch", "change"]):
+        if any(word in q_clean for word in ["hypothetical", "what if", "changes", "switch", "change"]):
             changes = _extract_hypothetical_changes(question)
             return {
                 "intent": "hypothetical",
@@ -113,7 +114,19 @@ def create_fallback_plan(question: str) -> Dict:
             "requires_unavailable_data": False,
         }
 
-    if any(word in q for word in ["how many", "count", "total customers", "number of"]):
+    # Top risk customers check MUST be checked before general count checks
+    if any(word in q_clean for word in ["high risk", "highest risk", "top risk", "most likely to churn", "at risk"]):
+        return {
+            "intent": "aggregate",
+            "reasoning": "Top risk customers query",
+            "steps": [
+                {"tool": "get_top_risk_customers", "params": {"n": 10}, "purpose": "Get highest risk customers"},
+                {"tool": "generate_chart", "params": {"chart_type": "top_risk_customers", "n": 10}, "purpose": "Visualize top risk customers"},
+            ],
+            "requires_unavailable_data": False,
+        }
+
+    if any(word in q_clean for word in ["how many", "count", "total customers", "number of"]):
         return {
             "intent": "dataset_info",
             "reasoning": "Dataset statistics requested",
@@ -121,7 +134,7 @@ def create_fallback_plan(question: str) -> Dict:
             "requires_unavailable_data": False,
         }
 
-    # Column / Segment breakdowns MUST be checked before general churn rate queries
+    # Column / Segment breakdowns
     col_map = {
         "contract": "Contract",
         "payment": "PaymentMethod",
@@ -135,7 +148,7 @@ def create_fallback_plan(question: str) -> Dict:
         "paperless": "PaperlessBilling",
     }
     for key, col in col_map.items():
-        if key in q:
+        if key in q_clean:
             return {
                 "intent": "eda",
                 "reasoning": f"Churn by {col}",
@@ -146,7 +159,7 @@ def create_fallback_plan(question: str) -> Dict:
                 "requires_unavailable_data": False,
             }
 
-    if any(word in q for word in ["churn rate", "churn %", "percentage churn", "churn percentage"]):
+    if any(word in q_clean for word in ["churn rate", "churn %", "percentage churn", "churn percentage"]):
         return {
             "intent": "eda",
             "reasoning": "Churn rate query",
@@ -157,19 +170,8 @@ def create_fallback_plan(question: str) -> Dict:
             "requires_unavailable_data": False,
         }
 
-    if any(word in q for word in ["high risk", "highest risk", "most likely to churn", "top risk"]):
-        return {
-            "intent": "aggregate",
-            "reasoning": "Top risk customers query",
-            "steps": [
-                {"tool": "get_top_risk_customers", "params": {"n": 10}, "purpose": "Get highest risk customers"},
-                {"tool": "generate_chart", "params": {"chart_type": "top_risk_customers", "n": 10}, "purpose": "Visualize top risk customers"},
-            ],
-            "requires_unavailable_data": False,
-        }
-
-    if any(word in q for word in ["average", "mean", "monthly charges"]):
-        if any(word in q for word in ["churn", "churned", "vs", "difference"]):
+    if any(word in q_clean for word in ["average", "mean", "monthly charges"]):
+        if any(word in q_clean for word in ["churn", "churned", "vs", "difference"]):
             return {
                 "intent": "eda",
                 "reasoning": "Average monthly charges by churn status",

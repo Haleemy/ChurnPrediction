@@ -45,7 +45,7 @@ def tool_analyze_data(operation: str, **kwargs) -> Dict:
         return _err(f"Data analysis error: {str(e)}")
 
 
-def tool_predict_customer_risk(customer_id: str) -> Dict:
+def tool_predict_customer_risk(customer_id: str, **kwargs) -> Dict:
     """Predict churn risk for existing customer."""
     try:
         result = predict_churn_risk(customer_id)
@@ -59,7 +59,7 @@ def tool_predict_customer_risk(customer_id: str) -> Dict:
         return _err(f"Prediction error: {str(e)}")
 
 
-def tool_predict_hypothetical(customer_id: str, changes: Dict[str, Any]) -> Dict:
+def tool_predict_hypothetical(customer_id: str, changes: Dict[str, Any], **kwargs) -> Dict:
     """Compare current vs. hypothetical risk."""
     try:
         result = predict_hypothetical(customer_id, changes)
@@ -73,7 +73,7 @@ def tool_predict_hypothetical(customer_id: str, changes: Dict[str, Any]) -> Dict
         return _err(f"Hypothetical prediction error: {str(e)}")
 
 
-def tool_predict_new_customer(features: Dict[str, Any]) -> Dict:
+def tool_predict_new_customer(features: Dict[str, Any], **kwargs) -> Dict:
     """Predict for a new/hypothetical customer."""
     try:
         result = predict_customer(features)
@@ -87,7 +87,7 @@ def tool_predict_new_customer(features: Dict[str, Any]) -> Dict:
         return _err(f"New customer prediction error: {str(e)}")
 
 
-def tool_get_top_risk_customers(n: int = 10) -> Dict:
+def tool_get_top_risk_customers(n: int = 10, **kwargs) -> Dict:
     """Return top N highest-risk customers + overall risk segment counts."""
     try:
         n = max(1, min(int(n), 100))  # Safety cap
@@ -115,6 +115,9 @@ def tool_get_top_risk_customers(n: int = 10) -> Dict:
 def tool_generate_chart(chart_type: str, column: Optional[str] = None, title: Optional[str] = None, **kwargs) -> Dict:
     """Generate a chart from actual data."""
     try:
+        # Map generic chart names if needed
+        if chart_type in ["bar", "bar_chart"]:
+            chart_type = "churn_by_column" if column else "churn_distribution"
         chart_data = _generate_chart(chart_type, column=column, title=title, **kwargs)
         if chart_data is None:
             return _err(f"Chart generation failed for type '{chart_type}'")
@@ -124,7 +127,7 @@ def tool_generate_chart(chart_type: str, column: Optional[str] = None, title: Op
         return _err(f"Chart error: {str(e)}")
 
 
-def tool_get_model_info() -> Dict:
+def tool_get_model_info(**kwargs) -> Dict:
     """Return model metadata and feature importance."""
     try:
         metadata = load_metadata()
@@ -144,7 +147,7 @@ def tool_get_model_info() -> Dict:
         return _err(f"Model info error: {str(e)}")
 
 
-def tool_get_dataset_info() -> Dict:
+def tool_get_dataset_info(**kwargs) -> Dict:
     """Return dataset summary statistics."""
     try:
         df = load_dataset()

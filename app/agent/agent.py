@@ -265,7 +265,7 @@ class ChurnAnalystAgent:
             result = tr["result"]
             purpose = tr.get("purpose", "")
             if result.get("success"):
-                data_str = json.dumps(result["data"], indent=2, default=str)[:2000]
+                data_str = json.dumps(result["data"], default=str)[:12000]
                 formatted_results.append(f"[{tool} — {purpose}]\n{data_str}")
             else:
                 error = result.get("error", "Unknown error")
@@ -286,7 +286,7 @@ class ChurnAnalystAgent:
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.1,
-                max_tokens=800,
+                max_tokens=1024,
             )
             raw_content = response.get("content", "I encountered an error generating the answer.")
             return self._clean_llm_response(raw_content)
@@ -304,7 +304,33 @@ class ChurnAnalystAgent:
         # 1. Remove <think>...</think> tags
         text = re.sub(r'<think>[\s\S]*?</think>', '', text, flags=re.IGNORECASE).strip()
 
-        # 2. Check for explicit final section markers (e.g. "Final Polish:", "Final Answer:", "Draft:")
+        # 2. Strip robotic meta-disclaimers
+        text = re.sub(r'\(as returned by the model\)', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'\(as returned by model\)', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'Source:\s*`?[a-zA-Z_]+`?\s*result\.?', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'These figures come directly from standard tool computations\.?', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'These figures come directly from the `?[a-zA-Z_]+`? result\.?', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'The tool returned only these [a-zA-Z0-9\s]+ entries[\s\S]*?\.', '', text, flags=re.IGNORECASE)
+
+        # 3. Check if text contains a "Final check of the text: \"...\"" pattern
+        final_check_match = re.search(r'Final check of the text:\s*["“]([\s\S]+?)["”]', text, flags=re.IGNORECASE)
+        if final_check_match:
+            text = final_check_match.group(1).strip()
+
+        # 4. Cut off at "Check against rules:" or "Self-Correction:" if preceded by text
+        cutoff_patterns = [
+            r"\n\s*Check against rules\s*:",
+            r"\n\s*Constraints check\s*:",
+            r"\n\s*Self-correction\s*:",
+            r"\n\s*Matches all constraints\s*\.",
+        ]
+        for pat in cutoff_patterns:
+            parts = re.split(pat, text, flags=re.IGNORECASE)
+            if len(parts) > 1 and len(parts[0].strip()) > 10:
+                text = parts[0].strip()
+                break
+
+        # 5. Check for explicit final section markers (e.g. "Final Polish:", "Final Answer:", "Draft:")
         section_markers = [
             r"(?:Final Polish|Final Answer|Final Response|Refined Answer|Draft)\s*:\s*",
         ]
@@ -314,14 +340,7 @@ class ChurnAnalystAgent:
                 text = parts[-1].strip()
                 break
 
-        # 3. If the LLM placed its final answer in double quotes (e.g. "Customer 8879-ZKJOF is assessed..."):
-        quoted_answers = re.findall(r'"([^"]{20,})"', text)
-        if quoted_answers:
-            for q_text in reversed(quoted_answers):
-                if any(start in q_text for start in ["Customer", "Based on", "The average", "According to", "There are", "Among", "For churned", "Out of"]):
-                    return q_text.strip()
-
-        # 4. Filter out lines that match common monologue/thinking/drafting patterns
+        # 6. Filter out lines matching meta-reasoning, rule checks, and self-auditing
         thinking_starters = (
             "the user", "i need to", "i should", "tool 1", "tool 2", "tool 3",
             "wait,", "actually,", "let's check", "i'll keep it", "this follows all rules",
@@ -331,7 +350,9 @@ class ChurnAnalystAgent:
             "extract key information", "synthesize the answer:", "refine language:",
             "draft the response:", "refine the response", "opening:", "details:",
             "factors:", "profile:", "customer features:", "draft:", "let's craft",
-            "count, but", "rule"
+            "count, but", "rule", "check against rules", "matches all constraints",
+            "proceeds. i will output", "final check of the text", "respond immediately?",
+            "acknowledge insufficient", "no extra numbers?", "source:"
         )
 
         lines = text.split("\n")
@@ -349,12 +370,16 @@ class ChurnAnalystAgent:
             if any(stripped_lower.startswith(starter) for starter in thinking_starters):
                 continue
 
-            # Skip lines that are system rule bullets (e.g. "- Base answer ONLY on tool results.")
-            if stripped_lower.startswith("- ") and any(rule_kw in stripped_lower for rule_kw in ["base answer", "quote specific", "no inner", "conversational", "tool results"]):
+            # Skip bullet points like "• Respond Immediately? Yes." or "- Acknowledge..."
+            if (stripped_lower.startswith("•") or stripped_lower.startswith("-")) and ("?" in stripped_lower or "yes" in stripped_lower or "no" in stripped_lower):
+                continue
+
+            # Skip lines that are system rule bullets
+            if (stripped_lower.startswith("- ") or stripped_lower.startswith("• ")) and any(rule_kw in stripped_lower for rule_kw in ["base answer", "quote specific", "no inner", "conversational", "tool results", "respond immediately", "extra numbers"]):
                 continue
 
             # Skip meta commentary lines
-            if any(meta in stripped_lower for meta in ["this follows all rules", "no inner monologue", "direct answer", "grounded in tool", "let's craft"]):
+            if any(meta in stripped_lower for meta in ["this follows all rules", "no inner monologue", "direct answer", "grounded in tool", "let's craft", "matches all constraints", "i will just output the answer"]):
                 continue
 
             cleaned_lines.append(line)
