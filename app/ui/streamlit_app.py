@@ -77,7 +77,7 @@ def render_theme_css(theme: str = "Dark"):
                 {INK};
         }}
 
-        .block-container {{ padding-top: 1.6rem; padding-bottom: 3rem; max-width: 1240px; }}
+        .block-container {{ padding-top: 3.8rem; padding-bottom: 3rem; max-width: 1240px; }}
 
         .topstrip {{
             display: flex; justify-content: space-between; align-items: center;
@@ -274,7 +274,7 @@ def render_theme_css(theme: str = "Dark"):
                 {INK};
         }}
 
-        .block-container {{ padding-top: 1.6rem; padding-bottom: 3rem; max-width: 1240px; }}
+        .block-container {{ padding-top: 3.8rem; padding-bottom: 3rem; max-width: 1240px; }}
 
         .topstrip {{
             display: flex; justify-content: space-between; align-items: center;

@@ -35,17 +35,19 @@ def load_pipeline(model_path: Path = None):
     global _pipeline_cache
     if _pipeline_cache is None:
         p = model_path or MODEL_PATH
-        if not Path(p).exists():
-            logger.info(f"Model file not found at {p}. Auto-training model pipeline...")
+        if Path(p).exists():
             try:
-                from app.model.trainer import train_model
-                train_model()
+                _pipeline_cache = joblib.load(p)
             except Exception as e:
-                logger.error(f"Auto-training model failed: {e}")
-                raise FileNotFoundError(
-                    f"Trained model not found at {p} and auto-training failed: {e}"
-                )
-        _pipeline_cache = joblib.load(p)
+                logger.warning(f"Incompatible model pickle at {p} ({e}). Re-training pipeline...")
+                from app.model.train import train_and_save
+                train_and_save()
+                _pipeline_cache = joblib.load(p)
+        else:
+            logger.info(f"Model file not found at {p}. Auto-training model pipeline...")
+            from app.model.train import train_and_save
+            train_and_save()
+            _pipeline_cache = joblib.load(p)
         logger.info(f"Model loaded from {p}")
     return _pipeline_cache
 
