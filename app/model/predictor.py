@@ -31,11 +31,14 @@ _pipeline_cache = None
 _metadata_cache: Optional[Dict] = None
 
 
-def load_pipeline(model_path: Path = None):
+def load_pipeline(model_path: Path = None, force_retrain: bool = False):
     global _pipeline_cache
+    if force_retrain:
+        _pipeline_cache = None
+
     if _pipeline_cache is None:
         p = model_path or MODEL_PATH
-        if Path(p).exists():
+        if Path(p).exists() and not force_retrain:
             try:
                 loaded = joblib.load(p)
                 # Validation check: test predict_proba to catch sklearn version attribute mismatches (e.g. SimpleImputer)
@@ -48,11 +51,13 @@ def load_pipeline(model_path: Path = None):
                 logger.warning(f"Model at {p} failed prediction validation test ({e}). Auto-retraining pipeline...")
                 from app.model.train import train_and_save
                 train_and_save()
+                invalidate_model_cache()
                 _pipeline_cache = joblib.load(p)
         else:
-            logger.info(f"Model file not found at {p}. Auto-training model pipeline...")
+            logger.info(f"Model file not found or force retrain requested at {p}. Auto-training model pipeline...")
             from app.model.train import train_and_save
             train_and_save()
+            invalidate_model_cache()
             _pipeline_cache = joblib.load(p)
         logger.info(f"Model loaded successfully from {p}")
     return _pipeline_cache
@@ -87,7 +92,13 @@ def _predict_from_df(feature_df: pd.DataFrame) -> Dict:
     pipeline = load_pipeline()
     threshold = _get_threshold()
 
-    prob = float(pipeline.predict_proba(feature_df)[:, 1][0])
+    try:
+        prob = float(pipeline.predict_proba(feature_df)[:, 1][0])
+    except Exception as e:
+        logger.warning(f"Prediction failed ({e}), auto-retraining model...")
+        pipeline = load_pipeline(force_retrain=True)
+        prob = float(pipeline.predict_proba(feature_df)[:, 1][0])
+
     prediction = "Likely to churn" if prob >= threshold else "Unlikely to churn"
     risk_level = get_risk_level(prob)
 
@@ -184,7 +195,12 @@ def predict_batch(customer_ids: list) -> list:
             results.append({"customer_id": cid, "error": "Not found"})
             continue
         feature_df = pd.DataFrame([row[ALL_FEATURES]])
-        prob = float(pipeline.predict_proba(feature_df)[:, 1][0])
+        try:
+            prob = float(pipeline.predict_proba(feature_df)[:, 1][0])
+        except Exception as e:
+            logger.warning(f"Predict batch item failed ({e}), auto-retraining model...")
+            pipeline = load_pipeline(force_retrain=True)
+            prob = float(pipeline.predict_proba(feature_df)[:, 1][0])
         results.append({
             "customer_id": cid,
             "risk_score": round(prob, 4),
@@ -204,7 +220,12 @@ def predict_all_customers() -> pd.DataFrame:
     threshold = _get_threshold()
 
     X = df[ALL_FEATURES].copy()
-    probs = pipeline.predict_proba(X)[:, 1]
+    try:
+        probs = pipeline.predict_proba(X)[:, 1]
+    except Exception as e:
+        logger.warning(f"Batch prediction failed ({e}), auto-retraining model...")
+        pipeline = load_pipeline(force_retrain=True)
+        probs = pipeline.predict_proba(X)[:, 1]
 
     result_df = df[[ID_COLUMN]].copy()
     result_df["risk_score"] = np.round(probs, 4)
