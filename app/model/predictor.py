@@ -37,9 +37,15 @@ def load_pipeline(model_path: Path = None):
         p = model_path or MODEL_PATH
         if Path(p).exists():
             try:
-                _pipeline_cache = joblib.load(p)
+                loaded = joblib.load(p)
+                # Validation check: test predict_proba to catch sklearn version attribute mismatches (e.g. SimpleImputer)
+                from app.data.loader import load_dataset
+                from app.config import ALL_FEATURES
+                sample_df = load_dataset().head(1)[ALL_FEATURES]
+                loaded.predict_proba(sample_df)
+                _pipeline_cache = loaded
             except Exception as e:
-                logger.warning(f"Incompatible model pickle at {p} ({e}). Re-training pipeline...")
+                logger.warning(f"Model at {p} failed prediction validation test ({e}). Auto-retraining pipeline...")
                 from app.model.train import train_and_save
                 train_and_save()
                 _pipeline_cache = joblib.load(p)
@@ -48,7 +54,7 @@ def load_pipeline(model_path: Path = None):
             from app.model.train import train_and_save
             train_and_save()
             _pipeline_cache = joblib.load(p)
-        logger.info(f"Model loaded from {p}")
+        logger.info(f"Model loaded successfully from {p}")
     return _pipeline_cache
 
 
