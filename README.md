@@ -3,7 +3,7 @@
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://churnprediction-wydvzyekdd2zmhbkvlwogr.streamlit.app/)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Haleemy/ChurnPrediction/blob/main/notebooks/churn_analysis.ipynb)
 
-🚀 **Live Deployment**: [churnprediction-wydvzyekdd2zmhbkvlwogr.streamlit.app](https://churnprediction-wydvzyekdd2zmhbkvlwogr.streamlit.app/)
+**Live Deployment**: [churnprediction-wydvzyekdd2zmhbkvlwogr.streamlit.app](https://churnprediction-wydvzyekdd2zmhbkvlwogr.streamlit.app/)
 
 A production-quality, **genuinely agentic** system for exploring customer churn data, predicting risk, and answering natural language questions — with verified, grounded answers (no hallucination).
 
