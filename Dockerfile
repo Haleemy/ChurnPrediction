@@ -14,9 +14,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project
 COPY . .
 
-# Train model at build time (requires data to be present)
-# Uncomment to pre-train:
-# RUN python -c "import sys; sys.path.insert(0, '.'); from app.model.train import train_and_save; import logging; logging.basicConfig(level=logging.INFO); train_and_save()"
+# Train model at build time
+RUN python -c "import sys; sys.path.insert(0, '.'); from app.model.train import train_and_save; import logging; logging.basicConfig(level=logging.INFO); train_and_save()"
 
 EXPOSE 8501
 

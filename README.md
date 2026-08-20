@@ -208,25 +208,11 @@ churn-analyst/
 ├── models/                     # Saved model + metadata (gitignored)
 ├── notebooks/
 │   └── churn_analysis.ipynb    # Full EDA → model → evaluation notebook
-├── tests/                      # 25 pytest tests
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
 ├── .env.example
 └── run.py                      # CLI: train | inspect | test-agent | ui
-```
-
----
-
-## Running Tests
-
-```bash
-# Run all tests
-$env:PYTHONPATH = (pwd).Path  # Windows
-pytest tests/ -v
-
-# Or with PYTHONPATH set
-PYTHONPATH=. pytest tests/ -v  # Unix/Mac
 ```
 
 ---
@@ -313,5 +299,4 @@ docker-compose run trainer
 - **~2.5h**: Exploratory Data Analysis, data cleaning pipeline, feature engineering, and model cross-validation comparison.
 - **~3.5h**: Agent architecture design (Planner, operational tool signatures, execution loop, and grounding verifier).
 - **~2.0h**: Streamlit web application, custom CSS theme system (Light & Dark modes), and Plotly chart integrations.
-- **~1.0h**: Pytest testing suite (25 tests), Docker containerization, and Streamlit Cloud auto-retraining deployment setup.
 - **~0.5h**: Documentation, Colab setup, and final submission verification.
