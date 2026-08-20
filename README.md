@@ -1,5 +1,7 @@
 # 🔮 Autonomous Data Analyst — Churn Prediction Agent
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Haleemy/ChurnPrediction/blob/main/notebooks/churn_analysis.ipynb)
+
 A production-quality, **genuinely agentic** system for exploring customer churn data, predicting risk, and answering natural language questions — with verified, grounded answers (no hallucination).
 
 ---
@@ -294,3 +296,22 @@ docker-compose run trainer
 - [ ] Scheduled retraining on fresh data
 - [ ] Evaluation harness with 15-question grounded test suite
 - [ ] OpenAI/Anthropic fallback provider
+
+---
+
+## Reflection
+
+- **Hardest Part**: Engineering deterministic tool-selection and anti-hallucination verification logic on a free-tier LLM. Small models can occasionally return malformed JSON or hit API rate limits; building a resilient rule-based plan fallback system (`create_fallback_plan`) alongside post-execution grounding verification ensured zero numerical hallucination without breaking conversation flows.
+- **What I Learned / Taught Myself**: Designing stateful agent planning pipelines, enforcing strict separation between LLM reasoning and Python computation, computing SHAP model explanations for tabular pipelines, and building dynamic light/dark visual theme engines in Streamlit.
+- **What I'd Do Differently With More Time**: Build an automated end-to-end evaluation harness with benchmark synthetic queries, implement streaming token response rendering in the chat interface, and implement vector-backed conversation memory.
+
+---
+
+## Time Spent
+
+**~9.5 hours total**:
+- **~2.5h**: Exploratory Data Analysis, data cleaning pipeline, feature engineering, and model cross-validation comparison.
+- **~3.5h**: Agent architecture design (Planner, operational tool signatures, execution loop, and grounding verifier).
+- **~2.0h**: Streamlit web application, custom CSS theme system (Light & Dark modes), and Plotly chart integrations.
+- **~1.0h**: Pytest testing suite (85 tests), Docker containerization, and Streamlit Cloud auto-retraining deployment setup.
+- **~0.5h**: Documentation, Colab setup, and final submission verification.
