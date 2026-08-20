@@ -215,13 +215,10 @@ class FallbackProvider(LLMProvider):
         }
 
     def _generate_fallback_plan(self, user_msg: str) -> str:
-        """Return a simple dataset_info plan."""
-        return json.dumps({
-            "intent": "dataset_info",
-            "reasoning": "No LLM available — using default dataset info plan",
-            "steps": [{"tool": "get_dataset_info", "params": {}, "purpose": "Get dataset overview"}],
-            "requires_unavailable_data": False,
-        })
+        """Return a rule-based plan using create_fallback_plan."""
+        from app.agent.planner import create_fallback_plan
+        plan = create_fallback_plan(user_msg)
+        return json.dumps(plan)
 
     def _generate_fallback_answer(self, user_msg: str, messages: List[Dict]) -> str:
         # Try to extract tool results from the message context

@@ -20,20 +20,20 @@ logger = logging.getLogger(__name__)
 # Ember dark theme palette & default layout properties
 DARK_LAYOUT = dict(
     paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="rgba(35, 22, 20, 0.45)",
+    plot_bgcolor="rgba(0,0,0,0)",
     font=dict(family="Inter, sans-serif", color="#f0e2d8", size=12),
     title_font=dict(family="Space Grotesk, sans-serif", color="#f5ede4", size=16),
     margin=dict(l=40, r=40, t=50, b=40),
     colorway=["#FF6B35", "#FFB84D", "#B24BF3", "#2DD4BF", "#F72585"],
     xaxis=dict(
-        gridcolor="#2a1d1a",
-        zerolinecolor="#4a332c",
+        gridcolor="rgba(255,255,255,0.07)",
+        zerolinecolor="rgba(255,255,255,0.15)",
         showgrid=True,
         tickfont=dict(color="#c9a898"),
     ),
     yaxis=dict(
-        gridcolor="#2a1d1a",
-        zerolinecolor="#4a332c",
+        gridcolor="rgba(255,255,255,0.07)",
+        zerolinecolor="rgba(255,255,255,0.15)",
         showgrid=True,
         tickfont=dict(color="#c9a898"),
     ),
@@ -42,94 +42,70 @@ DARK_LAYOUT = dict(
 # Light theme layout properties
 LIGHT_LAYOUT = dict(
     paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="rgba(248, 250, 252, 0.8)",
-    font=dict(family="Inter, sans-serif", color="#1e293b", size=12),
-    title_font=dict(family="Space Grotesk, sans-serif", color="#0f172a", size=16),
+    plot_bgcolor="rgba(0,0,0,0)",
+    font=dict(family="Inter, sans-serif", color="#0F172A", size=12),
+    title_font=dict(family="Space Grotesk, sans-serif", color="#0F172A", size=16),
     margin=dict(l=40, r=40, t=50, b=40),
-    colorway=["#e11d48", "#d97706", "#7c3aed", "#059669", "#2563eb"],
+    colorway=["#2563EB", "#059669", "#E11D48", "#D97706", "#7C3AED"],
     xaxis=dict(
-        gridcolor="#e2e8f0",
-        zerolinecolor="#cbd5e1",
+        gridcolor="#E2E8F0",
+        zerolinecolor="#CBD5E1",
         showgrid=True,
-        tickfont=dict(color="#64748b"),
+        tickfont=dict(color="#0F172A", size=12),
     ),
     yaxis=dict(
-        gridcolor="#e2e8f0",
-        zerolinecolor="#cbd5e1",
+        gridcolor="#E2E8F0",
+        zerolinecolor="#CBD5E1",
         showgrid=True,
-        tickfont=dict(color="#64748b"),
+        tickfont=dict(color="#0F172A", size=12),
     ),
 )
 
 
-def _apply_theme(fig: go.Figure, title: str = None, theme: str = "Dark") -> Dict:
+def _apply_theme(fig: go.Figure, title: str = None, theme: str = "Light") -> Dict:
     """Apply unified design system to a Plotly figure (Dark or Light)."""
     base_layout = LIGHT_LAYOUT if theme == "Light" else DARK_LAYOUT
     layout_update = base_layout.copy()
     if title:
-        title_color = "#0f172a" if theme == "Light" else "#f5ede4"
+        title_color = "#0F172A" if theme == "Light" else "#f5ede4"
         layout_update["title"] = dict(text=title, font=dict(size=16, color=title_color))
     fig.update_layout(**layout_update)
     return fig.to_dict()
 
 
-def chart_risk_gauge(score: float, customer_id: str = "", theme: str = "Dark") -> Dict:
-    """Sleek gauge chart for individual customer churn risk score."""
-    pct = score * 100
+def chart_risk_gauge(score: float, customer_id: str = "", theme: str = "Light") -> Dict:
+    """Gauge chart showing single customer churn risk score."""
+    bar_color = "#dc2626" if score >= 0.7 else ("#d97706" if score >= 0.4 else "#059669")
+    if theme == "Dark":
+        bar_color = "#FF6B6B" if score >= 0.7 else ("#FFB84D" if score >= 0.4 else "#2DD4BF")
 
-    if score >= 0.65:
-        gauge_color = "#dc2626" if theme == "Light" else "#FF6B6B"
-        risk_label = "HIGH RISK"
-    elif score >= 0.35:
-        gauge_color = "#d97706" if theme == "Light" else "#FFB84D"
-        risk_label = "MEDIUM RISK"
-    else:
-        gauge_color = "#059669" if theme == "Light" else "#2DD4BF"
-        risk_label = "LOW RISK"
-
-    bg_color = "rgba(241, 245, 249, 0.8)" if theme == "Light" else "rgba(35, 22, 20, 0.6)"
-    border_color = "#cbd5e1" if theme == "Light" else "#4a332c"
-    tick_color = "#94a3b8" if theme == "Light" else "#8a6a5c"
-    title_sub_color = "#64748b" if theme == "Light" else "#c9a898"
-    font_color = "#0f172a" if theme == "Light" else "#f5ede4"
-
-    fig = go.Figure(
-        go.Indicator(
-            mode="gauge+number+delta",
-            value=pct,
-            number={"suffix": "%", "font": {"size": 42, "color": gauge_color, "family": "Space Grotesk, sans-serif"}},
-            title={"text": f"<b>{risk_label}</b><br><span style='font-size:0.8em;color:{title_sub_color};'>{customer_id}</span>", "font": {"size": 16}},
-            gauge={
-                "axis": {"range": [0, 100], "tickwidth": 1, "tickcolor": tick_color},
-                "bar": {"color": gauge_color, "thickness": 0.3},
-                "bgcolor": bg_color,
-                "borderwidth": 1,
-                "bordercolor": border_color,
-                "steps": [
-                    {"range": [0, 35], "color": "rgba(16, 185, 129, 0.15)" if theme == "Light" else "rgba(45, 212, 191, 0.15)"},
-                    {"range": [35, 65], "color": "rgba(245, 158, 11, 0.15)" if theme == "Light" else "rgba(255, 184, 77, 0.15)"},
-                    {"range": [65, 100], "color": "rgba(239, 68, 68, 0.15)" if theme == "Light" else "rgba(255, 107, 107, 0.15)"},
-                ],
-                "threshold": {
-                    "line": {"color": font_color, "width": 3},
-                    "thickness": 0.8,
-                    "value": 50.0,
-                },
-            },
-        )
-    )
-
-    fig.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Inter, sans-serif", color=font_color),
-        margin=dict(l=30, r=30, t=40, b=30),
-        height=240,
-    )
-    return fig.to_dict()
+    fig = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=score * 100,
+        number={"suffix": "%", "font": {"size": 36, "color": "#0f172a" if theme == "Light" else "#f5ede4"}},
+        title={"text": f"Churn Risk — {customer_id}" if customer_id else "Churn Risk", "font": {"size": 16, "color": "#0f172a" if theme == "Light" else "#f5ede4"}},
+        gauge={
+            "axis": {"range": [0, 100], "tickwidth": 1, "tickcolor": "#cbd5e1" if theme == "Light" else "#4a332c"},
+            "bar": {"color": bar_color},
+            "bgcolor": "rgba(0,0,0,0)",
+            "borderwidth": 1,
+            "bordercolor": "rgba(0,0,0,0.1)" if theme == "Light" else "rgba(255,255,255,0.1)",
+            "steps": [
+                {"range": [0, 40], "color": "rgba(5, 150, 105, 0.15)" if theme == "Light" else "rgba(45, 212, 191, 0.15)"},
+                {"range": [40, 70], "color": "rgba(217, 119, 6, 0.15)" if theme == "Light" else "rgba(255, 184, 77, 0.15)"},
+                {"range": [70, 100], "color": "rgba(220, 38, 38, 0.15)" if theme == "Light" else "rgba(255, 107, 107, 0.15)"},
+            ],
+            "threshold": {
+                "line": {"color": "#ef4444", "width": 4},
+                "thickness": 0.75,
+                "value": 50
+            }
+        }
+    ))
+    return _apply_theme(fig, f"Risk Gauge — {customer_id}" if customer_id else "Risk Gauge", theme=theme)
 
 
-def chart_churn_distribution(df: pd.DataFrame, title: str = None, theme: str = "Dark") -> Dict:
+def chart_churn_distribution(df: pd.DataFrame, title: str = None, theme: str = "Light") -> Dict:
     """Pie/Donut chart of overall customer churn distribution."""
     vc = df[TARGET_COLUMN].value_counts()
     yes_color = "#dc2626" if theme == "Light" else "#FF6B6B"
@@ -151,7 +127,7 @@ def chart_churn_distribution(df: pd.DataFrame, title: str = None, theme: str = "
     return _apply_theme(fig, title or "Customer Churn Ratio", theme=theme)
 
 
-def chart_churn_by_column(df: pd.DataFrame, column: str, title: str = None, theme: str = "Dark") -> Dict:
+def chart_churn_by_column(df: pd.DataFrame, column: str, title: str = None, theme: str = "Light") -> Dict:
     """Bar chart: churn rate by categorical column."""
     if column not in df.columns:
         return None
@@ -187,7 +163,7 @@ def chart_churn_by_column(df: pd.DataFrame, column: str, title: str = None, them
     return _apply_theme(fig, title or f"Churn Rate by {column}", theme=theme)
 
 
-def chart_distribution(df: pd.DataFrame, column: str, title: str = None, theme: str = "Dark") -> Dict:
+def chart_distribution(df: pd.DataFrame, column: str, title: str = None, theme: str = "Light") -> Dict:
     """Histogram of a numeric or categorical column split by churn."""
     if column not in df.columns:
         return None
@@ -210,7 +186,7 @@ def chart_distribution(df: pd.DataFrame, column: str, title: str = None, theme: 
         return chart_churn_by_column(df, column, title, theme=theme)
 
 
-def chart_tenure_trend(df: pd.DataFrame, title: str = None, theme: str = "Dark") -> Dict:
+def chart_tenure_trend(df: pd.DataFrame, title: str = None, theme: str = "Light") -> Dict:
     """Combo line/bar chart: customer volume & churn rate by tenure range."""
     bins = [0, 12, 24, 36, 48, 60, 72]
     labels = ["0-12m", "13-24m", "25-36m", "37-48m", "49-60m", "61-72m"]
@@ -260,7 +236,7 @@ def chart_tenure_trend(df: pd.DataFrame, title: str = None, theme: str = "Dark")
     return _apply_theme(fig, title or "Churn Rate & Customer Count by Tenure", theme=theme)
 
 
-def chart_risk_distribution(risk_df: pd.DataFrame, title: str = None, theme: str = "Dark") -> Dict:
+def chart_risk_distribution(risk_df: pd.DataFrame, title: str = None, theme: str = "Light") -> Dict:
     """Distribution of predicted churn risk scores."""
     cmap = {"High": "#dc2626", "Medium": "#d97706", "Low": "#059669"} if theme == "Light" else {"High": "#FF6B6B", "Medium": "#FFB84D", "Low": "#2DD4BF"}
     vline_color = "#64748b" if theme == "Light" else "#c9a898"
@@ -277,39 +253,7 @@ def chart_risk_distribution(risk_df: pd.DataFrame, title: str = None, theme: str
     return _apply_theme(fig, title or "Predicted Churn Risk Distribution", theme=theme)
 
 
-def chart_risk_gauge(score: float, customer_id: str = "", theme: str = "Dark") -> Dict:
-    """Gauge chart showing single customer churn risk score."""
-    bar_color = "#FF6B6B" if score >= 0.7 else ("#FFB84D" if score >= 0.4 else "#2DD4BF")
-    if theme == "Light":
-        bar_color = "#dc2626" if score >= 0.7 else ("#d97706" if score >= 0.4 else "#059669")
-
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=score * 100,
-        number={"suffix": "%", "font": {"size": 36, "color": "#f5ede4" if theme == "Dark" else "#0f172a"}},
-        title={"text": f"Churn Risk — {customer_id}" if customer_id else "Churn Risk", "font": {"size": 16, "color": "#f5ede4" if theme == "Dark" else "#0f172a"}},
-        gauge={
-            "axis": {"range": [0, 100], "tickwidth": 1, "tickcolor": "#4a332c" if theme == "Dark" else "#cbd5e1"},
-            "bar": {"color": bar_color},
-            "bgcolor": "rgba(0,0,0,0)",
-            "borderwidth": 1,
-            "bordercolor": "rgba(255,255,255,0.1)" if theme == "Dark" else "rgba(0,0,0,0.1)",
-            "steps": [
-                {"range": [0, 40], "color": "rgba(45, 212, 191, 0.15)" if theme == "Dark" else "rgba(5, 150, 105, 0.15)"},
-                {"range": [40, 70], "color": "rgba(255, 184, 77, 0.15)" if theme == "Dark" else "rgba(217, 119, 6, 0.15)"},
-                {"range": [70, 100], "color": "rgba(255, 107, 107, 0.15)" if theme == "Dark" else "rgba(220, 38, 38, 0.15)"},
-            ],
-            "threshold": {
-                "line": {"color": "#ef4444", "width": 4},
-                "thickness": 0.75,
-                "value": 50
-            }
-        }
-    ))
-    return _apply_theme(fig, f"Risk Gauge — {customer_id}" if customer_id else "Risk Gauge", theme=theme)
-
-
-def chart_monthly_charges_by_churn(df: pd.DataFrame, title: str = None, theme: str = "Dark") -> Dict:
+def chart_monthly_charges_by_churn(df: pd.DataFrame, title: str = None, theme: str = "Light") -> Dict:
     """Box plot of monthly charges split by churn status."""
     yes_color = "#dc2626" if theme == "Light" else "#FF6B6B"
     no_color = "#059669" if theme == "Light" else "#2DD4BF"
@@ -326,7 +270,7 @@ def chart_monthly_charges_by_churn(df: pd.DataFrame, title: str = None, theme: s
     return _apply_theme(fig, title or "Monthly Charges by Churn Status", theme=theme)
 
 
-def chart_top_risk_customers(risk_df: pd.DataFrame, n: int = 15, title: str = None, theme: str = "Dark") -> Dict:
+def chart_top_risk_customers(risk_df: pd.DataFrame, n: int = 15, title: str = None, theme: str = "Light") -> Dict:
     """Horizontal bar chart of top N highest risk customers."""
     top = risk_df.nlargest(n, "risk_score")
     scale = ["#f59e0b", "#ef4444"] if theme == "Light" else ["#FFB84D", "#FF6B6B"]
@@ -346,7 +290,7 @@ def chart_top_risk_customers(risk_df: pd.DataFrame, n: int = 15, title: str = No
     return _apply_theme(fig, title or f"Top {n} Highest Risk Customers", theme=theme)
 
 
-def chart_feature_importance(importance_list: List[Dict], title: str = None, theme: str = "Dark") -> Dict:
+def chart_feature_importance(importance_list: List[Dict], title: str = None, theme: str = "Light") -> Dict:
     """Horizontal bar chart of top feature importances."""
     if not importance_list:
         return None
@@ -369,7 +313,7 @@ def chart_feature_importance(importance_list: List[Dict], title: str = None, the
 
 # ── Dispatcher ────────────────────────────────────────────────────────────────
 
-def generate_chart(chart_type: str, column: Optional[str] = None, title: Optional[str] = None, theme: str = "Dark", **kwargs) -> Optional[Dict]:
+def generate_chart(chart_type: str, column: Optional[str] = None, title: Optional[str] = None, theme: str = "Light", **kwargs) -> Optional[Dict]:
     """Central chart dispatcher."""
     try:
         from app.data.loader import load_dataset
@@ -408,9 +352,9 @@ def generate_chart(chart_type: str, column: Optional[str] = None, title: Optiona
         elif chart_type == "correlation_heatmap":
             numeric_df = df[NUMERICAL_FEATURES + ["Churn_Binary"]].corr()
             diverging = [
-                [0.0, "#7c3aed" if theme == "Light" else "#B24BF3"],
-                [0.5, "#f1f5f9" if theme == "Light" else "#1a1210"],
-                [1.0, "#dc2626" if theme == "Light" else "#FF6B6B"],
+                [0.0, "#2563EB" if theme == "Light" else "#B24BF3"],
+                [0.5, "#F8FAFC" if theme == "Light" else "#1a1210"],
+                [1.0, "#E11D48" if theme == "Light" else "#FF6B6B"],
             ]
             fig = px.imshow(
                 numeric_df,
@@ -419,7 +363,21 @@ def generate_chart(chart_type: str, column: Optional[str] = None, title: Optiona
                 zmin=-1, zmax=1,
                 text_auto=".2f",
             )
+            axis_font = dict(color="#0F172A" if theme == "Light" else "#f5ede4", size=12, family="Inter, sans-serif")
+            fig.update_xaxes(tickfont=axis_font)
+            fig.update_yaxes(tickfont=axis_font)
             return _apply_theme(fig, title or "Feature Correlation Heatmap", theme=theme)
+
+        elif chart_type == "feature_importance":
+            from app.model.predictor import load_pipeline
+            from app.model.explainability import get_global_feature_importance
+            try:
+                pipeline = load_pipeline()
+                importance = get_global_feature_importance(pipeline)
+                return chart_feature_importance(importance, title, theme=theme)
+            except Exception as e:
+                logger.warning(f"Could not load feature importance for chart: {e}")
+                return None
 
         else:
             logger.warning(f"Unknown chart type: {chart_type}")

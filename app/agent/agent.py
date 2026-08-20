@@ -216,7 +216,7 @@ class ChurnAnalystAgent:
         from app.agent.tools import execute_tool
         q_lower = question.lower()
 
-        # Check tool results for top risk customers or dataframe operations
+        # Check tool results for top risk customers, model info, or dataframe operations
         for tr in tool_results:
             tool = tr.get("tool")
             res_data = tr.get("result", {}).get("data")
@@ -224,8 +224,15 @@ class ChurnAnalystAgent:
                 res = execute_tool("generate_chart", chart_type="top_risk_customers", n=10)
                 if res.get("success"):
                     return res["data"]
+            elif tool == "get_model_info":
+                res = execute_tool("generate_chart", chart_type="feature_importance")
+                if res.get("success"):
+                    return res["data"]
             elif tool == "analyze_data":
-                if "contract" in q_lower:
+                if any(k in q_lower for k in ["correlation", "corr", "heatmap", "relationship", "relate"]):
+                    res = execute_tool("generate_chart", chart_type="correlation_heatmap")
+                    if res.get("success"): return res["data"]
+                elif "contract" in q_lower:
                     res = execute_tool("generate_chart", chart_type="churn_by_column", column="Contract")
                     if res.get("success"): return res["data"]
                 elif "payment" in q_lower:
@@ -240,6 +247,11 @@ class ChurnAnalystAgent:
                 elif "monthly" in q_lower or "charges" in q_lower:
                     res = execute_tool("generate_chart", chart_type="monthly_charges_by_churn")
                     if res.get("success"): return res["data"]
+
+        if any(w in q_lower for w in ["correlation", "corr", "heatmap"]):
+            res = execute_tool("generate_chart", chart_type="correlation_heatmap")
+            if res.get("success"):
+                return res["data"]
 
         if any(w in q_lower for w in ["churn rate", "distribution", "overall churn"]):
             res = execute_tool("generate_chart", chart_type="churn_distribution")

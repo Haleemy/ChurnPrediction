@@ -114,6 +114,53 @@ def create_fallback_plan(question: str) -> Dict:
             "requires_unavailable_data": False,
         }
 
+    # Correlation check
+    if any(word in q_clean for word in ["correlation", "corr", "heatmap", "relationship", "relate", "association", "associated"]):
+        params = {"operation": "correlation"}
+        if "tenure" in q_clean and "monthly" in q_clean:
+            params["col1"] = "tenure"
+            params["col2"] = "MonthlyCharges"
+        elif "tenure" in q_clean and "total" in q_clean:
+            params["col1"] = "tenure"
+            params["col2"] = "TotalCharges"
+        elif "monthly" in q_clean and "total" in q_clean:
+            params["col1"] = "MonthlyCharges"
+            params["col2"] = "TotalCharges"
+
+        return {
+            "intent": "eda",
+            "reasoning": "Correlation analysis requested",
+            "steps": [
+                {"tool": "analyze_data", "params": params, "purpose": "Calculate feature correlation"},
+                {"tool": "generate_chart", "params": {"chart_type": "correlation_heatmap"}, "purpose": "Visualize correlation heatmap"},
+            ],
+            "requires_unavailable_data": False,
+        }
+
+    # Model info / Feature importance check
+    if any(word in q_clean for word in ["model", "feature importance", "important feature", "metrics", "roc", "auc", "accuracy"]):
+        return {
+            "intent": "model_info",
+            "reasoning": "Model metrics and feature importance requested",
+            "steps": [
+                {"tool": "get_model_info", "params": {}, "purpose": "Get model metadata and feature importance"},
+                {"tool": "generate_chart", "params": {"chart_type": "feature_importance"}, "purpose": "Visualize feature importances"},
+            ],
+            "requires_unavailable_data": False,
+        }
+
+    # Tenure trend check
+    if "tenure" in q_clean and any(w in q_clean for w in ["trend", "bucket", "range", "over time", "length", "duration"]):
+        return {
+            "intent": "eda",
+            "reasoning": "Tenure trend analysis requested",
+            "steps": [
+                {"tool": "analyze_data", "params": {"operation": "tenure_trend"}, "purpose": "Compute churn rate by tenure range"},
+                {"tool": "generate_chart", "params": {"chart_type": "tenure_trend"}, "purpose": "Visualize churn rate by tenure"},
+            ],
+            "requires_unavailable_data": False,
+        }
+
     # Top risk customers check MUST be checked before general count checks
     if any(word in q_clean for word in ["high risk", "highest risk", "top risk", "most likely to churn", "at risk"]):
         return {

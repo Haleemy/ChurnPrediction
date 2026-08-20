@@ -253,16 +253,34 @@ def top_n_records(
     return _ok(result.to_dict(orient="records"), f"Top {n} records by {sort_col}")
 
 
-def correlation(df: pd.DataFrame, col1: str, col2: str) -> Dict:
-    """Pearson correlation between two numeric columns."""
-    for col in [col1, col2]:
-        err = validate_column(df, col)
-        if err:
-            return _err(err)
-        if not pd.api.types.is_numeric_dtype(df[col]):
-            return _err(f"Column '{col}' must be numeric for correlation")
-    r = round(float(df[col1].corr(df[col2])), 4)
-    return _ok({"col1": col1, "col2": col2, "pearson_r": r}, f"Correlation: {col1} vs {col2}")
+def correlation(df: pd.DataFrame, col1: Optional[str] = None, col2: Optional[str] = None) -> Dict:
+    """Pearson correlation between two numeric columns or overall correlation matrix if columns omitted."""
+    from app.config import NUMERICAL_FEATURES, TARGET_COLUMN
+
+    if col1 and col2:
+        for col in [col1, col2]:
+            err = validate_column(df, col)
+            if err:
+                return _err(err)
+            if not pd.api.types.is_numeric_dtype(df[col]):
+                return _err(f"Column '{col}' must be numeric for correlation")
+        r = round(float(df[col1].corr(df[col2])), 4)
+        return _ok({"col1": col1, "col2": col2, "pearson_r": r}, f"Correlation: {col1} vs {col2}")
+
+    # Overall numeric correlations
+    df_calc = df.copy()
+    if "Churn_Binary" not in df_calc.columns and TARGET_COLUMN in df_calc.columns:
+        df_calc["Churn_Binary"] = (df_calc[TARGET_COLUMN] == "Yes").astype(int)
+
+    num_cols = [c for c in NUMERICAL_FEATURES + ["Churn_Binary"] if c in df_calc.columns]
+    if not num_cols:
+        num_cols = df_calc.select_dtypes(include=[np.number]).columns.tolist()
+
+    corr_matrix = df_calc[num_cols].corr().round(4).to_dict()
+    return _ok({
+        "correlation_matrix": corr_matrix,
+        "features": num_cols,
+    }, "Numeric feature correlation matrix")
 
 
 def segment_comparison(

@@ -44,27 +44,54 @@ User question: {question}
 Conversation context: {context}
 
 Available tools:
-- analyze_data(operation, **kwargs): Run dataframe operations (group_by_churn, get_average, get_distribution, etc.)
-- predict_customer_risk(customer_id): Get churn risk for a known customer
+- analyze_data(operation, **kwargs): Run dataframe operations.
+  Supported operations:
+  • "correlation": calculate correlation between col1 and col2 (or overall numeric correlation if col1/col2 omitted). Parameters: col1, col2.
+  • "group_by_churn": churn rate breakdown by a categorical column. Parameters: column.
+  • "average_by_churn": mean of numeric column for churned vs non-churned. Parameters: column.
+  • "get_average": overall average of numeric column. Parameters: column.
+  • "get_median": median of numeric column. Parameters: column.
+  • "get_distribution": histogram/stats distribution of a column. Parameters: column.
+  • "count_by_column": value counts for a column. Parameters: column.
+  • "filter_and_count": count rows matching condition. Parameters: column, value, operator ("eq", "gt", "lt", etc.).
+  • "group_aggregate": aggregate agg_col grouped by group_col using agg_func ("mean", "sum", "count", etc.).
+  • "tenure_trend": churn rate by tenure range.
+  • "segment_comparison": compare metrics across segments. Parameters: segment_col, metric_col.
+  • "get_churn_rate": overall dataset churn rate.
+  • "get_shape": total rows and columns.
+  • "get_columns": column metadata list.
+  • "get_missing_values": count missing values per column.
+- predict_customer_risk(customer_id): Get churn risk for a known customer ID (e.g. '7590-VHVEG')
 - predict_hypothetical(customer_id, changes): Compare current vs. hypothetical risk (e.g. changes={{"Contract": "Two year"}})
-- predict_new_customer(features): Predict for a new/hypothetical customer profile
-- get_top_risk_customers(n, with_predictions): Get N highest-risk customers
-- generate_chart(chart_type, **kwargs): Create a visualization
-- get_model_info(): Get model metadata and feature importance
-- get_dataset_info(): Get dataset summary statistics
+- predict_new_customer(features): Predict for a new customer profile
+- get_top_risk_customers(n): Get N highest-risk customers
+- generate_chart(chart_type, **kwargs): Create a Plotly visualization.
+  Supported chart_types:
+  • "correlation_heatmap": correlation matrix heatmap of numeric features
+  • "feature_importance": bar chart of top model feature importances
+  • "churn_distribution": donut chart of overall churn
+  • "churn_by_column": bar chart of churn rate by column (requires column="ColumnName")
+  • "monthly_charges_by_churn": box plot of monthly charges by churn
+  • "tenure_trend": combo bar/line chart of churn by tenure range
+  • "distribution": histogram of a column (requires column="ColumnName")
+  • "risk_distribution": histogram of predicted risk scores
+  • "top_risk_customers": horizontal bar chart of top N risk customers
+- get_model_info(): Get ML model metadata and feature importance
+- get_dataset_info(): Get dataset summary statistics (row count, column list, overall churn rate)
 
 Instructions:
-1. Identify what the question is asking (EDA / prediction / hypothetical / aggregate / multi-step).
-2. Check if required columns exist. If a column is mentioned that isn't in the dataset, note it.
+1. Identify what the question is asking (EDA / prediction / hypothetical / aggregate / model_info / correlation / multi-step).
+2. Check if required columns exist.
 3. List the specific tool calls needed IN ORDER.
-4. ALWAYS include a `generate_chart` step whenever the question asks about distributions, segment breakdowns, top risk customers, trends, correlations, or comparisons!
-5. For hypothetical questions (e.g. switching contract/payment method), populate 'changes' with the exact feature override dict (e.g. {{"Contract": "Two year"}}).
-6. Be specific about parameters.
-7. If the question is unanswerable (missing data/column), state that.
+4. ALWAYS include a `generate_chart` step whenever the question asks about distributions, segment breakdowns, top risk customers, trends, correlations, feature importances, or comparisons!
+5. For correlation questions (e.g. "correlation between tenure and monthly charges"), use `analyze_data(operation="correlation", col1="tenure", col2="MonthlyCharges")` AND `generate_chart(chart_type="correlation_heatmap")`.
+6. For model info / feature importance questions, use `get_model_info()` AND `generate_chart(chart_type="feature_importance")`.
+7. For hypothetical questions, populate 'changes' dict with exact overrides (e.g. {{"Contract": "Two year"}}).
+8. If the question is unanswerable (missing data/column), state that with intent="unanswerable".
 
 Respond with a JSON object:
 {{
-  "intent": "eda|prediction|hypothetical|aggregate|dataset_info|multi_step|unanswerable",
+  "intent": "eda|prediction|hypothetical|aggregate|dataset_info|model_info|multi_step|unanswerable",
   "reasoning": "Brief explanation of what needs to happen",
   "steps": [
     {{"tool": "tool_name", "params": {{}}, "purpose": "why this step"}},

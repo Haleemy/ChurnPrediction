@@ -43,7 +43,7 @@ st.set_page_config(
 # ═══════════════════════════════════════════════════════════════════════════
 # DESIGN SYSTEM — Dark & Light Themes
 # ═══════════════════════════════════════════════════════════════════════════
-def render_theme_css(theme: str = "Dark"):
+def render_theme_css(theme: str = "Light"):
     if theme == "Light":
         MINT = "#059669"
         AMBER = "#D97706"
@@ -51,7 +51,7 @@ def render_theme_css(theme: str = "Dark"):
         INK = "#F8FAFC"
         PANEL = "#FFFFFF"
         TEXT = "#0F172A"
-        MUTED = "#64748B"
+        MUTED = "#475569"
         BORDER = "#E2E8F0"
 
         st.markdown(f"""
@@ -60,21 +60,18 @@ def render_theme_css(theme: str = "Dark"):
 
         html, body, [class*="css"] {{
             font-family: 'Inter', sans-serif;
-            color: {TEXT};
+            color: {TEXT} !important;
         }}
         h1, h2, h3, h4, h5, h6 {{
             font-family: 'Sora', sans-serif;
             letter-spacing: -0.015em;
             color: {TEXT} !important;
+            font-weight: 700;
         }}
-        code, .mono {{ font-family: 'JetBrains Mono', monospace; }}
+        code, .mono {{ font-family: 'JetBrains Mono', monospace; color: {TEXT}; }}
 
         .stApp {{
-            background:
-                radial-gradient(circle at 12% 8%, rgba(5,150,105,0.06) 0%, transparent 40%),
-                radial-gradient(circle at 88% 15%, rgba(225,29,72,0.05) 0%, transparent 40%),
-                radial-gradient(circle at 50% 95%, rgba(217,119,6,0.05) 0%, transparent 45%),
-                {INK};
+            background: {INK};
         }}
 
         .block-container {{ padding-top: 3.8rem; padding-bottom: 3rem; max-width: 1240px; }}
@@ -501,8 +498,8 @@ def render_sidebar():
         # Theme Selector Radio
         selected_theme = st.radio(
             "Theme",
-            ["Dark", "Light"],
-            index=0 if st.session_state.theme == "Dark" else 1,
+            ["Light", "Dark"],
+            index=0 if st.session_state.theme == "Light" else 1,
             horizontal=True,
             key="theme_radio_selector",
         )
@@ -661,7 +658,7 @@ def page_chat():
 
     st.markdown("---")
 
-    for msg in st.session_state.messages:
+    for msg_idx, msg in enumerate(st.session_state.messages):
         if msg["role"] == "user":
             st.markdown(f'<div class="msg-row user"><div class="bubble-user">{msg["content"]}</div></div>', unsafe_allow_html=True)
         else:
@@ -669,6 +666,32 @@ def page_chat():
                 f'<div class="msg-row"><div class="bubble-agent"><span class="agent-tag">agent</span>{msg["content"]}</div></div>',
                 unsafe_allow_html=True,
             )
+            charts = msg.get("charts", [])
+            if not charts and msg.get("tool_results"):
+                for tr in msg.get("tool_results", []):
+                    if tr.get("tool") == "generate_chart":
+                        cdata = tr.get("result", {}).get("data")
+                        if cdata:
+                            charts.append(cdata)
+
+            for fig_idx, fig_data in enumerate(charts):
+                if fig_data:
+                    try:
+                        fig = go.Figure(fig_data)
+                        is_light = st.session_state.theme == "Light"
+                        text_clr = "#0F172A" if is_light else "#F5EDE4"
+                        fig.update_layout(
+                            font=dict(color=text_clr, family="Inter, sans-serif"),
+                            title_font=dict(color=text_clr, family="Space Grotesk, sans-serif"),
+                            paper_bgcolor="rgba(0,0,0,0)",
+                            plot_bgcolor="rgba(0,0,0,0)"
+                        )
+                        fig.update_xaxes(tickfont=dict(color=text_clr), title_font=dict(color=text_clr))
+                        fig.update_yaxes(tickfont=dict(color=text_clr), title_font=dict(color=text_clr))
+                        st.plotly_chart(fig, use_container_width=True, key=f"chat_chart_{msg_idx}_{fig_idx}")
+                    except Exception as e:
+                        logger.error(f"Error rendering chart in chat: {e}")
+
             if msg.get("tool_results"):
                 with st.expander("View tool calls & verification trace", expanded=False):
                     for tr in msg["tool_results"]:
@@ -699,6 +722,7 @@ def page_chat():
                     "role": "assistant",
                     "content": "Could not initialize the agent. Make sure the model is trained (`python run.py train`) and an LLM API key is set.",
                     "tool_results": [],
+                    "charts": [],
                 })
                 st.rerun()
 
@@ -709,6 +733,7 @@ def page_chat():
                     "role": "assistant",
                     "content": result["answer"],
                     "tool_results": result.get("tool_results", []),
+                    "charts": result.get("charts", []),
                 })
             except Exception:
                 logger.error(traceback.format_exc())
